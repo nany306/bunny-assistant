@@ -1,4 +1,5 @@
 Flask
 gunicorn
 colorama
-marshmallow # NOUVELLE DEPENDANCE CRUCIALE
+marshmallow
+flask-cors  
