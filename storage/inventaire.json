@@ -1,0 +1,74 @@
+[
+    {
+        "nom": "V\u00e9rifier contrat A",
+        "type_event": "Tache",
+        "urgence": 4,
+        "importance": 5,
+        "duree_minutes": 120,
+        "projet": "Financement",
+        "est_complete": false,
+        "progression_pourcentage": 0,
+        "date_heure_debut": null,
+        "date_limite": "2025-10-30"
+    },
+    {
+        "nom": "Mettre \u00e0 jour statut Projet C",
+        "type_event": "Tache",
+        "urgence": 2,
+        "importance": 3,
+        "duree_minutes": 15,
+        "projet": "Routine",
+        "est_complete": false,
+        "progression_pourcentage": 0,
+        "date_heure_debut": null,
+        "date_limite": "2025-12-01"
+    },
+    {
+        "nom": "Finaliser le rapport de la semaine",
+        "type_event": "Tache",
+        "urgence": 5,
+        "importance": 4,
+        "duree_minutes": 60,
+        "projet": "Gestion",
+        "est_complete": false,
+        "progression_pourcentage": 0,
+        "date_heure_debut": null,
+        "date_limite": "2025-10-29"
+    },
+    {
+        "nom": "RDV - Point avec l'\u00e9quipe X",
+        "type_event": "RDV",
+        "urgence": 5,
+        "importance": 5,
+        "duree_minutes": 60,
+        "projet": "Gestion",
+        "est_complete": false,
+        "progression_pourcentage": 0,
+        "date_heure_debut": "2025-11-01 17:00",
+        "date_limite": null
+    },
+    {
+        "nom": "tache",
+        "type_event": "Tache",
+        "urgence": 2,
+        "importance": 2,
+        "duree_minutes": 50,
+        "projet": "rien",
+        "est_complete": false,
+        "progression_pourcentage": 0,
+        "date_heure_debut": null,
+        "date_limite": null
+    },
+    {
+        "nom": "Banane ",
+        "type_event": "Tache",
+        "urgence": 3,
+        "importance": 3,
+        "duree_minutes": 60,
+        "projet": "Divers",
+        "est_complete": false,
+        "progression_pourcentage": 0,
+        "date_heure_debut": null,
+        "date_limite": null
+    }
+]

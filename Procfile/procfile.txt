@@ -1,0 +1,1 @@
+web: gunicorn interfaces.api_main:app
