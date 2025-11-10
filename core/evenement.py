@@ -1,80 +1,57 @@
 # core/evenement.py
 from dataclasses import dataclass, field
 from datetime import datetime
+from marshmallow import Schema, fields, post_load
 
-# Cache global pour l'inventaire en mémoire (utilisé par l'API et la CLI)
-LISTE_EVENEMENTS_INVENTAIRE = [] 
+# LISTE_EVENEMENTS_INVENTAIRE n'est plus utilisé dans cette architecture
+# La mémoire est gérée par le client (mobile)
 
 @dataclass
 class Evenement:
-    # --- Champs obligatoires pour la logique métier ---
+    """Représente une tâche ou un événement dans l'inventaire."""
     nom: str
-    type_event: str # 'Tache' ou 'RDV'
+    type_event: str = field(default='Tache') # 'Tache', 'Projet', 'RendezVous'
+    urgence: int = field(default=3) # 1 (Basse) à 5 (Haute)
+    importance: int = field(default=3) # 1 (Faible) à 5 (Forte)
+    duree_totale_minutes: int = field(default=60)
+    date_creation: datetime = field(default_factory=datetime.now)
+    est_complete: bool = field(default=False)
+    db_id: int = field(default_factory=lambda: Evenement.generate_id()) # ID unique pour le client
+    projet: str = field(default='Divers')
     
-    # --- Champs Tâche (optionnels pour RDV) ---
-    urgence: int = 3
-    importance: int = 3
-    duree_totale_minutes: int = 60
-    projet: str = "Divers"
-    
-    # --- Champs de statut/Progression ---
-    progression_pourcentage: int = 0
-    est_complete: bool = False
-    
-    # --- Champs de Date (Utilisation de field pour les valeurs par défaut) ---
-    date_creation: str = field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    date_heure_debut: str = None # Pour les RDV
-    date_limite: str = None # Pour les Tâches
-    
-    # --- CLÉ PRIMAIRE POUR LA DB (ESSENTIEL POUR LA PERSISTANCE SQLITE) ---
-    db_id: int = field(default=None) 
+    # Stockage de l'ID maximal généré pour garantir l'unicité
+    _max_id: int = 0
 
-    # --- MÉTHODES UTILES ---
-    
-    def get_duree_restante_minutes(self):
-        """Calcule le temps restant à partir de la durée totale et de la progression."""
-        temps_restant = self.duree_totale_minutes * (1 - (self.progression_pourcentage / 100))
-        return max(0, int(temps_restant))
-
-    def calculer_score_priorite(self):
-        """Calcule la priorité (Logique simplifiée pour la démo, à adapter)."""
-        if self.type_event == 'Tache' and not self.est_complete and self.duree_totale_minutes > 0:
-            # Facteur d'urgence/importance
-            score = (self.urgence * 1.5) + (self.importance * 1.0)
-            
-            # Facteur d'échéance (Bonus si proche)
-            if self.date_limite:
-                try:
-                    echeance_date = datetime.strptime(self.date_limite, '%Y-%m-%d').date()
-                    jours_restants = (echeance_date - datetime.today().date()).days
-                    if jours_restants <= 0:
-                        return float('inf') # Priorité absolue
-                    if jours_restants < 7:
-                        score *= (7 / jours_restants)
-                except ValueError:
-                    pass # Format de date invalide
-                    
-            return score
-        return 0
+    @staticmethod
+    def generate_id():
+        """Génère un ID unique pour cette instance. Nécessite que le client gère le max_id."""
+        Evenement._max_id += 1
+        return Evenement._max_id
 
     def marquer_terminee(self):
-        """Met à jour le statut de l'événement comme terminé."""
-        self.progression_pourcentage = 100
         self.est_complete = True
-    
-    def to_dict(self):
-        """Retourne un dictionnaire des attributs pour l'API/sauvegarde."""
-        return {
-            'nom': self.nom,
-            'type_event': self.type_event,
-            'urgence': self.urgence,
-            'importance': self.importance,
-            'duree_minutes': self.duree_totale_minutes, # Nom standardisé pour l'API
-            'projet': self.projet,
-            'progression_pourcentage': self.progression_pourcentage,
-            'est_complete': self.est_complete,
-            'date_creation': self.date_creation,
-            'date_heure_debut': self.date_heure_debut,
-            'date_limite': self.date_limite,
-            'db_id': self.db_id,
-        }
+        
+    def calculer_score_priorite(self):
+        """Calcul simple de priorité: (Urgence * Importance) / Durée ajustée"""
+        # Ponderation pour que la durée n'écrase pas le score
+        duree_ajustee = max(15, self.duree_totale_minutes) # Min 15 min
+        score = (self.urgence * self.importance * 10) / (duree_ajustee / 60)
+        return score
+
+# --- DÉFINITION DU SCHÉMA MARSHMALLOW (CORRECTION DE L'IMPORTEUR) ---
+class EvenementSchema(Schema):
+    """Schéma pour sérialiser/désérialiser les objets Evenement via JSON."""
+    nom = fields.Str(required=True)
+    type_event = fields.Str()
+    urgence = fields.Int()
+    importance = fields.Int()
+    duree_totale_minutes = fields.Int()
+    date_creation = fields.DateTime(format='iso')
+    est_complete = fields.Bool()
+    db_id = fields.Int()
+    projet = fields.Str()
+
+    @post_load
+    def make_evenement(self, data, **kwargs):
+        """Recrée l'objet Evenement après la désérialisation."""
+        return Evenement(**data)

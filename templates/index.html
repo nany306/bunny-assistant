@@ -75,7 +75,6 @@
 
         // Variable globale (la "mémoire" du client)
         let inventaireGlobal = [];
-        let nextDbId = 1;
 
         // ---------------------------------------------------------------------
         // 1. GESTION DU LOCAL STORAGE (Persistance Côté Mobile)
@@ -86,11 +85,6 @@
                 const data = localStorage.getItem(LOCAL_STORAGE_KEY);
                 if (data) {
                     inventaireGlobal = JSON.parse(data);
-                    // Déterminer le prochain ID disponible pour les nouvelles tâches
-                    if (inventaireGlobal.length > 0) {
-                        const maxId = inventaireGlobal.reduce((max, tache) => Math.max(max, tache.db_id || 0), 0);
-                        nextDbId = maxId + 1;
-                    }
                 }
             } catch (error) {
                 console.error("Erreur de chargement LocalStorage:", error);
@@ -101,9 +95,6 @@
         function sauvegarderInventaireLocal(nouveauInventaire) {
             inventaireGlobal = nouveauInventaire;
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(inventaireGlobal));
-            // Recalculer le prochain ID après une mise à jour complète
-            const maxId = inventaireGlobal.reduce((max, tache) => Math.max(max, tache.db_id || 0), 0);
-            nextDbId = maxId + 1;
             fetchPriorites(); // Rafraîchir l'affichage après la sauvegarde
         }
 
@@ -136,20 +127,17 @@
         // 3. LOGIQUE MÉTIER
         // ---------------------------------------------------------------------
 
-        // Affiche la liste des tâches prioritaires
         async function fetchPriorites() {
             const listElement = document.getElementById('priority-list');
             listElement.innerHTML = '<div class="empty-state">Calcul de priorité...</div>';
 
-            // Envoie l'inventaire complet pour que l'API puisse faire le calcul
             const priorites = await apiPost('/api/v1/taches/priorite', { inventaire: inventaireGlobal });
 
             if (priorites && priorites.length > 0) {
-                listElement.innerHTML = ''; // Vider le message de chargement
+                listElement.innerHTML = '';
                 priorites.forEach(tache => {
                     const item = document.createElement('div');
                     
-                    // Détermine la classe de couleur basée sur le score
                     let priorityClass = 'low';
                     if (tache.score_priorite >= 8) {
                         priorityClass = 'high';
@@ -173,7 +161,6 @@
             }
         }
 
-        // Ajout d'une nouvelle tâche (envoie la tâche + l'inventaire existant)
         async function ajouterTache() {
             const nom = document.getElementById('nom').value;
             const importance = document.getElementById('importance').value;
@@ -186,9 +173,8 @@
                 return;
             }
             
-            // Créer le payload pour l'API
             const payload = {
-                inventaire: inventaireGlobal, // L'inventaire existant
+                inventaire: inventaireGlobal, 
                 nom: nom,
                 importance: importance,
                 urgence: urgence,
@@ -196,28 +182,23 @@
                 projet: projet
             };
 
-            // L'API nous retourne l'inventaire complet mis à jour
             const nouvelInventaire = await apiPost('/api/v1/taches/ajouter', payload);
             
             if (nouvelInventaire) {
                 sauvegarderInventaireLocal(nouvelInventaire);
-                // Réinitialiser le formulaire
                 document.getElementById('nom').value = '';
                 document.getElementById('projet').value = 'Divers';
             }
         }
 
-        // Terminer une tâche (envoie l'ID + l'inventaire existant)
         async function terminerTache(db_id) {
             if (!confirm("Voulez-vous vraiment marquer cette tâche comme terminée ?")) return;
 
-            // Créer le payload pour l'API
             const payload = {
-                inventaire: inventaireGlobal, // L'inventaire existant
+                inventaire: inventaireGlobal,
                 db_id: db_id
             };
 
-            // L'API nous retourne l'inventaire complet mis à jour
             const nouvelInventaire = await apiPost('/api/v1/taches/terminer', payload);
 
             if (nouvelInventaire) {
@@ -262,7 +243,6 @@
                          throw new Error("Le fichier JSON n'est pas une liste valide.");
                     }
                     
-                    // Si la lecture et le parsing réussissent, on écrase le localStorage
                     sauvegarderInventaireLocal(data);
                     alert("Inventaire chargé avec succès ! L'application est mise à jour.");
                     
@@ -273,7 +253,6 @@
             };
 
             reader.readAsText(file);
-            // Réinitialiser le champ de fichier pour pouvoir recharger le même fichier
             document.getElementById('uploadFile').value = ''; 
         }
 
