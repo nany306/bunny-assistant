@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant IA</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
+        h1, h2 { color: #3f51b5; text-align: center; border-bottom: 2px solid #3f51b5; padding-bottom: 5px; }
+        h2 { font-size: 1.2em; }
+        .task-list { list-style: none; padding: 0; }
+        .task-item { padding: 15px; margin-bottom: 10px; border-radius: 6px; background-color: #e8eaf6; border-left: 5px solid #3f51b5; display: flex; justify-content: space-between; align-items: center; }
+        .task-name { font-weight: bold; font-size: 1.1em; color: #333; }
+        .task-details { font-size: 0.9em; color: #666; margin-top: 5px; }
+        .score { font-weight: bold; color: #ff9800; }
+        .loading { text-align: center; font-style: italic; color: #999; }
+        form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; }
+        form label { display: block; margin-bottom: 5px; font-weight: bold; grid-column: span 2; }
+        form input[type="text"], form input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        form button { grid-column: span 2; padding: 10px; background-color: #3f51b5; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .form-group-half { grid-column: span 1; }
+        .complete-button { padding: 8px 12px; background-color: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
+        .task-info { flex-grow: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Assistant IA</h1>
+        <h2>Ajouter une Tâche</h2>
+        <form id="add-task-form">
+            <div style="grid-column: span 2;">
+                <label for="nom">Nom de la tâche</label>
+                <input type="text" id="nom" name="nom" required>
+            </div>
+            <div class="form-group-half">
+                <label for="urgence">Urgence (1-5)</label>
+                <input type="number" id="urgence" name="urgence" min="1" max="5" value="3" required>
+            </div>
+            <div class="form-group-half">
+                <label for="importance">Importance (1-5)</label>
+                <input type="number" id="importance" name="importance" min="1" max="5" value="3" required>
+            </div>
+            <div class="form-group-half">
+                <label for="duree">Durée (min)</label>
+                <input type="number" id="duree" name="duree" min="5" value="60" required>
+            </div>
+            <div class="form-group-half">
+                <label for="projet">Projet</label>
+                <input type="text" id="projet" name="projet" value="Divers">
+            </div>
+            <button type="submit">Ajouter Tâche</button>
+            <p id="message" style="grid-column: span 2; text-align: center; font-weight: bold;"></p>
+        </form>
+    </div>
+    <div class="container">
+        <h2 id="list-title">Tâches Actives et Prioritaires</h2>
+        <div id="loading" class="loading">Chargement des données...</div>
+        <ul id="task-list" class="task-list"></ul>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const listElement = document.getElementById('task-list');
+            const loadingElement = document.getElementById('loading');
+            const form = document.getElementById('add-task-form');
+            const messageElement = document.getElementById('message');
+
+            async function completeTask(taskId) {
+                if (!confirm("Marquer cette tâche comme terminée ?")) return;
+                
+                const apiUrl = `/api/v1/taches/${taskId}/terminer`;
+                try {
+                    const response = await fetch(apiUrl, { method: 'POST' });
+                    if (response.ok) {
+                        await loadTasks();
+                    } else {
+                        const error = await response.json();
+                        alert(`Erreur: ${error.error}`);
+                    }
+                } catch (error) {
+                    alert('Erreur de connexion réseau.');
+                }
+            }
+
+            async function loadTasks() {
+                listElement.innerHTML = '';
+                loadingElement.style.display = 'block';
+                listElement.style.display = 'none';
+                const apiUrl = '/api/v1/taches/priorite'; 
+
+                try {
+                    const response = await fetch(apiUrl);
+                    const tasks = await response.json();
+                    
+                    loadingElement.style.display = 'none';
+                    listElement.style.display = 'block';
+
+                    if (tasks.length === 0) {
+                        listElement.innerHTML = '<li class="task-item">Aucune tâche active.</li>';
+                        return;
+                    }
+
+                    tasks.forEach(task => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'task-item';
+                        
+                        const tempsRestant = task.duree_minutes * (1 - (task.progression_pourcentage / 100));
+                        
+                        const taskInfo = document.createElement('div');
+                        taskInfo.className = 'task-info';
+                        taskInfo.innerHTML = `
+                            <div class="task-name">${task.nom}</div>
+                            <div class="task-details">
+                                Priorité: <span class="score">${task.score_priorite}</span> | 
+                                Reste: ${tempsRestant.toFixed(0)} min | 
+                                Projet: ${task.projet} | 
+                                Progression: ${task.progression_pourcentage}%
+                            </div>
+                        `;
+                        
+                        const completeBtn = document.createElement('button');
+                        completeBtn.className = 'complete-button';
+                        completeBtn.textContent = 'Terminer';
+                        completeBtn.addEventListener('click', () => completeTask(task.id)); // Utilise l'ID de la DB
+
+                        listItem.appendChild(taskInfo);
+                        listItem.appendChild(completeBtn);
+                        listElement.appendChild(listItem);
+                    });
+
+                } catch (error) {
+                    loadingElement.textContent = 'Erreur chargement.';
+                }
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault(); 
+                const apiUrl = '/api/v1/taches/ajouter';
+                const formData = new FormData(form);
+                const taskData = {};
+                formData.forEach((value, key) => taskData[key] = value);
+
+                messageElement.textContent = 'Envoi...';
+                messageElement.style.color = '#ff9800';
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(taskData)
+                    });
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        messageElement.textContent = result.message;
+                        messageElement.style.color = 'green';
+                        form.reset();
+                        await loadTasks(); 
+                    } else {
+                        messageElement.textContent = `Erreur: ${result.error}`;
+                        messageElement.style.color = 'red';
+                    }
+                } catch (error) {
+                    messageElement.textContent = 'Erreur réseau.';
+                    messageElement.style.color = 'red';
+                }
+            });
+            loadTasks();
+        });
+    </script>
+</body>
+</html>
