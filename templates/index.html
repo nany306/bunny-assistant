@@ -22,9 +22,11 @@
         .score { font-weight: bold; color: #e74c3c; margin-left: 10px; }
         .empty-state { text-align: center; color: #7f8c8d; padding: 20px; border: 1px dashed #bdc3c7; border-radius: 8px; margin-top: 20px; }
         /* Actions de sauvegarde */
-        .sync-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+        .sync-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
         .btn-green { background-color: #27ae60; }
         .btn-green:hover { background-color: #219d54; }
+        .btn-orange { background-color: #f39c12; }
+        .btn-orange:hover { background-color: #e67e22; }
     </style>
 </head>
 <body>
@@ -58,12 +60,17 @@
 
         <div class="sync-actions">
             <button class="btn-action btn-green" onclick="telechargerInventaire()">💾 Télécharger l'Inventaire (JSON)</button>
-            </div>
+            
+            <label for="uploadFile" class="btn-action btn-orange" style="cursor: pointer;">
+                ⬆️ Charger l'Inventaire (JSON)
+            </label>
+            <input type="file" id="uploadFile" style="display: none;" onchange="chargerFichierInventaire(event)">
+        </div>
     </div>
 
     <script>
         // L'URL de votre API sur Render
-        const API_BASE_URL = window.location.origin; // Utilise l'URL actuelle (Render en prod, 5000 en dev)
+        const API_BASE_URL = window.location.origin;
         const LOCAL_STORAGE_KEY = 'ia_assistant_inventaire';
 
         // Variable globale (la "mémoire" du client)
@@ -162,7 +169,7 @@
                     listElement.appendChild(item);
                 });
             } else if (priorites) {
-                listElement.innerHTML = '<div class="empty-state">✅ Toutes les tâches actives ont été traitées ou aucune tâche active n\'est à prioriser.</div>';
+                listElement.innerHTML = '<div class="empty-state">✅ Aucune tâche active n\'est à prioriser.</div>';
             }
         }
 
@@ -219,7 +226,7 @@
         }
 
         // ---------------------------------------------------------------------
-        // 4. FONCTION DE TÉLÉCHARGEMENT (Synchronisation Manuelle)
+        // 4. FONCTION DE TÉLÉCHARGEMENT (Sauvegarde Manuelle / Cloud)
         // ---------------------------------------------------------------------
         
         function telechargerInventaire() {
@@ -230,9 +237,45 @@
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
-            alert("Inventaire JSON téléchargé ! Sauvegardez-le dans un endroit sûr.");
+            alert("Inventaire JSON téléchargé ! Transférez-le sur votre stockage Cloud (GitHub, Drive...) pour le conserver.");
         }
 
+        // ---------------------------------------------------------------------
+        // 5. FONCTION DE CHARGEMENT DE FICHIER (Restauration Manuelle / Cloud)
+        // ---------------------------------------------------------------------
+
+        function chargerFichierInventaire(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.type !== "application/json") {
+                alert("Veuillez sélectionner un fichier JSON valide.");
+                return;
+            }
+
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!Array.isArray(data)) {
+                         throw new Error("Le fichier JSON n'est pas une liste valide.");
+                    }
+                    
+                    // Si la lecture et le parsing réussissent, on écrase le localStorage
+                    sauvegarderInventaireLocal(data);
+                    alert("Inventaire chargé avec succès ! L'application est mise à jour.");
+                    
+                } catch (error) {
+                    console.error("Erreur de lecture ou de format JSON:", error);
+                    alert(`Erreur: Impossible de lire le fichier. Le format est-il correct ? (${error.message})`);
+                }
+            };
+
+            reader.readAsText(file);
+            // Réinitialiser le champ de fichier pour pouvoir recharger le même fichier
+            document.getElementById('uploadFile').value = ''; 
+        }
 
         // ---------------------------------------------------------------------
         // DÉMARRAGE DE L'APPLICATION
