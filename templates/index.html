@@ -2,71 +2,228 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assistant IA - Priorisation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mon Assistant IA</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-        h1 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
-        .task-form { display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-        .task-form input, .task-form select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
-        .task-form button, .btn-action { background-color: #3498db; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; transition: background-color 0.3s; }
-        .task-form button:hover, .btn-action:hover { background-color: #2980b9; }
-        .priority-list { margin-top: 20px; }
-        .task-item { background: #ecf0f1; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #e74c3c; }
-        .task-item.high { border-left-color: #e74c3c; }
-        .task-item.medium { border-left-color: #f39c12; }
-        .task-item.low { border-left-color: #2ecc71; }
+        /* --- Styles de Base et Mobile-First --- */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding-bottom: 60px; /* Espace pour la barre de navigation fixe */
+            background-color: #f4f4f9; 
+            color: #333;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px;
+        }
+        .content-section {
+            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        h1 { 
+            color: #2c3e50; 
+            text-align: center; 
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        /* --- Formulaire et Boutons --- */
+        .form-group { margin-bottom: 10px; }
+        .form-control { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            box-sizing: border-box; /* Inclut padding et border dans la largeur */
+        }
+        /* Regroupement des inputs de priorité (flexbox) */
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .input-row .form-control { flex: 1; }
+
+        .btn { 
+            background-color: #3498db; 
+            color: white; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        .btn:hover { background-color: #2980b9; }
+
+        /* --- Liste de Priorité --- */
+        .task-item { 
+            background: #ecf0f1; 
+            padding: 15px; 
+            margin-bottom: 10px; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-left: 5px solid; /* La couleur sera définie par JS */
+        }
+        .task-item.high { border-left-color: #e74c3c; } /* Rouge */
+        .task-item.medium { border-left-color: #f39c12; } /* Orange */
+        .task-item.low { border-left-color: #2ecc71; } /* Vert */
         .task-info { flex-grow: 1; }
         .task-info strong { display: block; font-size: 1.1em; }
-        .score { font-weight: bold; color: #e74c3c; margin-left: 10px; }
-        .empty-state { text-align: center; color: #7f8c8d; padding: 20px; border: 1px dashed #bdc3c7; border-radius: 8px; margin-top: 20px; }
-        /* Actions de sauvegarde */
-        .sync-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+        .btn-terminer { 
+            background-color: #e74c3c; 
+            padding: 8px 12px; 
+            margin-left: 10px;
+            font-size: 14px;
+            width: auto;
+        }
+        .btn-terminer:hover { background-color: #c0392b; }
+
+        /* --- Section Réglages et Sauvegarde --- */
+        .settings-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
         .btn-green { background-color: #27ae60; }
         .btn-green:hover { background-color: #219d54; }
         .btn-orange { background-color: #f39c12; }
         .btn-orange:hover { background-color: #e67e22; }
+
+        /* --- Barre de Navigation Basse (Inspiration App Mobile) --- */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: #fff;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #7f8c8d;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+        .nav-item.active {
+            color: #3498db;
+        }
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: 2px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Assistant IA - Tâches Prioritaires</h1>
+        <h1 id="main-title">Tâches Actives et Prioritaires</h1>
 
-        <div class="task-form">
-            <h2>Ajouter une Nouvelle Tâche</h2>
-            <input type="text" id="nom" placeholder="Nom de la tâche" required>
-            <div style="display: flex; gap: 10px;">
-                <select id="importance">
-                    <option value="1">Importance: Faible (1)</option>
+        <div id="calendar-view" class="content-section" style="display: none;">
+            <h2>📅 Mon Calendrier</h2>
+            <p>
+                *Ici sera affiché le calendrier pour visualiser les événements planifiés.*
+                <br>
+                (Fonctionnalité en cours de construction : nous allons y ajouter la visualisation bientôt.)
+            </p>
+            <div id="calendar-display"></div>
+        </div>
+
+
+        <div id="tasks-view" class="content-section">
+            <h2>Nouvelle Tâche / Événement</h2>
+            
+            <div class="form-group">
+                <input type="text" id="nom" placeholder="Nom de la tâche / événement" class="form-control" required>
+            </div>
+
+            <div class="input-row">
+                <select id="type-event" class="form-control">
+                    <option value="Tache">Type: Tâche à faire</option>
+                    <option value="RendezVous">Type: Rendez-vous / Événement</option>
+                </select>
+                <input type="number" id="duree" placeholder="Durée (min)" value="60" min="5" class="form-control">
+            </div>
+
+            <div class="input-row">
+                <select id="importance" class="form-control">
                     <option value="3" selected>Importance: Moyenne (3)</option>
                     <option value="5">Importance: Forte (5)</option>
+                    <option value="1">Importance: Faible (1)</option>
                 </select>
-                <select id="urgence">
-                    <option value="1">Urgence: Basse (1)</option>
+                <select id="urgence" class="form-control">
                     <option value="3" selected>Urgence: Moyenne (3)</option>
                     <option value="5">Urgence: Haute (5)</option>
+                    <option value="1">Urgence: Basse (1)</option>
                 </select>
-                <input type="number" id="duree" placeholder="Durée (min)" value="60" min="5">
             </div>
-            <input type="text" id="projet" placeholder="Projet (ex: Développement)" value="Divers">
-            <button onclick="ajouterTache()">Ajouter & Prioriser</button>
-        </div>
-        
-        <h2>Liste de Priorité</h2>
-        <div id="priority-list" class="priority-list">
-            <div class="empty-state">Chargement...</div>
+            
+            <div class="form-group">
+                <input type="text" id="projet" placeholder="Projet (ex: Dev, Finance)" value="Divers" class="form-control">
+            </div>
+
+            <button onclick="ajouterTache()" class="btn">
+                Ajouter & Prioriser
+            </button>
+            
+            <hr style="margin: 20px 0;">
+
+            <h3>Liste Prioritaire</h3>
+            <div id="priority-list">
+                <div class="empty-state">Chargement...</div>
+            </div>
         </div>
 
-        <div class="sync-actions">
-            <button class="btn-action btn-green" onclick="telechargerInventaire()">💾 Télécharger l'Inventaire (JSON)</button>
-            
-            <label for="uploadFile" class="btn-action btn-orange" style="cursor: pointer;">
-                ⬆️ Charger l'Inventaire (JSON)
-            </label>
-            <input type="file" id="uploadFile" style="display: none;" onchange="chargerFichierInventaire(event)">
+
+        <div id="settings-view" class="content-section" style="display: none;">
+            <h2>⚙️ Réglages et Sauvegarde</h2>
+            <hr>
+            <h3>Gestion de l'Inventaire (JSON)</h3>
+            <p>
+                Utilisez ces outils pour sauvegarder (Télécharger) ou restaurer (Charger) votre liste de tâches pour la synchronisation Cloud.
+            </p>
+            <div class="settings-actions">
+                <button class="btn btn-green" onclick="telechargerInventaire()">
+                    💾 Télécharger l'Inventaire
+                </button>
+                <label for="uploadFile" class="btn btn-orange" style="cursor: pointer; text-align: center;">
+                    ⬆️ Charger l'Inventaire
+                </label>
+                <input type="file" id="uploadFile" style="display: none;" onchange="chargerFichierInventaire(event)">
+            </div>
+        </div>
+
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item" onclick="changeView('calendar-view', this)" data-view="calendar-view">
+            <span class="nav-icon">📅</span> Calendrier
+        </div>
+        <div class="nav-item active" onclick="changeView('tasks-view', this)" data-view="tasks-view">
+            <span class="nav-icon">✅</span> Tâches
+        </div>
+        <div class="nav-item" onclick="changeView('settings-view', this)" data-view="settings-view">
+            <span class="nav-icon">⚙️</span> Réglages
         </div>
     </div>
+
 
     <script>
         // L'URL de votre API sur Render
@@ -75,6 +232,36 @@
 
         // Variable globale (la "mémoire" du client)
         let inventaireGlobal = [];
+
+        // ---------------------------------------------------------------------
+        // GESTION DES VUES (ONGLETS)
+        // ---------------------------------------------------------------------
+
+        function changeView(viewId, clickedElement) {
+            // Masquer toutes les sections de contenu
+            document.getElementById('calendar-view').style.display = 'none';
+            document.getElementById('tasks-view').style.display = 'none';
+            document.getElementById('settings-view').style.display = 'none';
+
+            // Afficher la section souhaitée
+            document.getElementById(viewId).style.display = 'block';
+
+            // Mettre à jour la classe "active" dans la barre de navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            clickedElement.classList.add('active');
+
+            // Mettre à jour le titre principal
+            if (viewId === 'calendar-view') {
+                document.getElementById('main-title').textContent = 'Mon Calendrier';
+            } else if (viewId === 'settings-view') {
+                document.getElementById('main-title').textContent = 'Configuration de l\'Assistant';
+            } else {
+                document.getElementById('main-title').textContent = 'Tâches Actives et Prioritaires';
+            }
+        }
+
 
         // ---------------------------------------------------------------------
         // 1. GESTION DU LOCAL STORAGE (Persistance Côté Mobile)
@@ -99,7 +286,7 @@
         }
 
         // ---------------------------------------------------------------------
-        // 2. COMMUNICATION API (Envoi des données à traiter)
+        // 2. COMMUNICATION API 
         // ---------------------------------------------------------------------
 
         async function apiPost(endpoint, dataToSend) {
@@ -127,42 +314,54 @@
         // 3. LOGIQUE MÉTIER
         // ---------------------------------------------------------------------
 
+        // Affiche la liste des tâches prioritaires
         async function fetchPriorites() {
             const listElement = document.getElementById('priority-list');
             listElement.innerHTML = '<div class="empty-state">Calcul de priorité...</div>';
 
+            // Envoie l'inventaire complet pour que l'API puisse faire le calcul
             const priorites = await apiPost('/api/v1/taches/priorite', { inventaire: inventaireGlobal });
 
             if (priorites && priorites.length > 0) {
-                listElement.innerHTML = '';
+                listElement.innerHTML = ''; // Vider le message de chargement
                 priorites.forEach(tache => {
-                    const item = document.createElement('div');
-                    
-                    let priorityClass = 'low';
-                    if (tache.score_priorite >= 8) {
-                        priorityClass = 'high';
-                    } else if (tache.score_priorite >= 4) {
-                        priorityClass = 'medium';
+                    // N'afficher que les tâches qui ne sont PAS des RendezVous et qui ne sont pas terminées
+                    if (tache.type_event !== 'RendezVous' && !tache.est_complete) {
+                        const item = document.createElement('div');
+                        
+                        // Détermine la classe de couleur basée sur le score
+                        let priorityClass = 'low';
+                        if (tache.score_priorite >= 8) {
+                            priorityClass = 'high';
+                        } else if (tache.score_priorite >= 4) {
+                            priorityClass = 'medium';
+                        }
+                        
+                        item.className = `task-item ${priorityClass}`;
+                        item.innerHTML = `
+                            <div class="task-info">
+                                <strong>${tache.nom}</strong>
+                                <small>${tache.projet} | Imp: ${tache.importance} | Urg: ${tache.urgence} | Durée: ${tache.duree_totale_minutes}min</small>
+                            </div>
+                            <button class="btn btn-terminer" onclick="terminerTache(${tache.db_id})">Terminer</button>
+                        `;
+                        listElement.appendChild(item);
                     }
-                    
-                    item.className = `task-item ${priorityClass}`;
-                    item.innerHTML = `
-                        <div class="task-info">
-                            <strong>${tache.nom}</strong>
-                            <small>${tache.projet} | Imp: ${tache.importance} | Urg: ${tache.urgence} | Durée: ${tache.duree_totale_minutes}min</small>
-                        </div>
-                        <span class="score">${tache.score_priorite}</span>
-                        <button class="btn-action" style="margin-left: 10px; background-color: #e74c3c;" onclick="terminerTache(${tache.db_id})">Terminer</button>
-                    `;
-                    listElement.appendChild(item);
                 });
+                
+                if (listElement.childElementCount === 0) {
+                    listElement.innerHTML = '<div class="empty-state">✅ Aucune tâche active n\'est à prioriser.</div>';
+                }
+
             } else if (priorites) {
                 listElement.innerHTML = '<div class="empty-state">✅ Aucune tâche active n\'est à prioriser.</div>';
             }
         }
 
+        // Ajout d'une nouvelle tâche (envoie la tâche + l'inventaire existant)
         async function ajouterTache() {
             const nom = document.getElementById('nom').value;
+            const typeEvent = document.getElementById('type-event').value;
             const importance = document.getElementById('importance').value;
             const urgence = document.getElementById('urgence').value;
             const duree = document.getElementById('duree').value;
@@ -173,32 +372,39 @@
                 return;
             }
             
+            // Créer le payload pour l'API
             const payload = {
-                inventaire: inventaireGlobal, 
+                inventaire: inventaireGlobal, // L'inventaire existant
                 nom: nom,
+                type_event: typeEvent,
                 importance: importance,
                 urgence: urgence,
                 duree: duree,
                 projet: projet
             };
 
+            // L'API nous retourne l'inventaire complet mis à jour
             const nouvelInventaire = await apiPost('/api/v1/taches/ajouter', payload);
             
             if (nouvelInventaire) {
                 sauvegarderInventaireLocal(nouvelInventaire);
+                // Réinitialiser le formulaire
                 document.getElementById('nom').value = '';
                 document.getElementById('projet').value = 'Divers';
             }
         }
 
+        // Terminer une tâche (envoie l'ID + l'inventaire existant)
         async function terminerTache(db_id) {
             if (!confirm("Voulez-vous vraiment marquer cette tâche comme terminée ?")) return;
 
+            // Créer le payload pour l'API
             const payload = {
-                inventaire: inventaireGlobal,
+                inventaire: inventaireGlobal, // L'inventaire existant
                 db_id: db_id
             };
 
+            // L'API nous retourne l'inventaire complet mis à jour
             const nouvelInventaire = await apiPost('/api/v1/taches/terminer', payload);
 
             if (nouvelInventaire) {
@@ -218,7 +424,7 @@
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
-            alert("Inventaire JSON téléchargé ! Transférez-le sur votre stockage Cloud (GitHub, Drive...) pour le conserver.");
+            alert("Inventaire JSON téléchargé ! Conservez ce fichier pour la synchronisation.");
         }
 
         // ---------------------------------------------------------------------
@@ -263,6 +469,9 @@
         window.onload = () => {
             chargerInventaireLocal();
             fetchPriorites();
+            // Assurez-vous que l'onglet 'Tâches' est actif au chargement
+            const tasksNav = document.querySelector('.nav-item[data-view="tasks-view"]');
+            changeView('tasks-view', tasksNav);
         };
 
     </script>
