@@ -1,48 +1,427 @@
-<h2>Nouvelle Tâche / Événement</h2>
+<script>
+        const API_BASE_URL = window.location.origin;
+        const LOCAL_STORAGE_KEY = 'ia_assistant_inventaire';
+        let inventaireGlobal = [];
+        const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        let dateActuelle = new Date(); 
+
+        // ---------------------------------------------------------------------
+        // GESTION DES VUES (ONGLETS) - INCHANGÉE
+        // ---------------------------------------------------------------------
+
+        function changeView(viewId, clickedElement) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(viewId).classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            clickedElement.classList.add('active');
+
+            if (viewId === 'calendar-view') {
+                document.getElementById('main-title').textContent = 'Mon Calendrier';
+                renderCalendar(); 
+            } else if (viewId === 'settings-view') {
+                document.getElementById('main-title').textContent = 'Configuration';
+            } else {
+                document.getElementById('main-title').textContent = 'Tâches Actives';
+            }
+        }
+        
+        // --- MISE À JOUR : Gère l'affichage des champs de date et récurrence ---
+        function toggleDateFields() {
+            const type = document.getElementById('type-event').value;
+            const dateFields = document.getElementById('date-fields');
+            const recurrenceField = document.getElementById('recurrence-field');
+            const priorityFields = document.getElementById('priority-fields');
             
-        <div class="form-group">
-            <input type="text" id="nom" placeholder="Nom de la tâche / événement" class="form-control" required>
-        </div>
+            if (type === 'RendezVous') {
+                dateFields.classList.remove('date-fields-hidden');
+                recurrenceField.classList.remove('date-fields-hidden');
+                priorityFields.classList.add('date-fields-hidden'); 
+            } else { // Tache
+                dateFields.classList.add('date-fields-hidden');
+                recurrenceField.classList.add('date-fields-hidden');
+                priorityFields.classList.remove('date-fields-hidden'); 
+            }
+        }
 
-        <div class="input-row">
-            <select id="type-event" class="form-control" onchange="toggleDateFields()">
-                <option value="Tache">Type: Tâche à faire</option>
-                <option value="RendezVous">Type: Rendez-vous / Événement</option>
-            </select>
-            <input type="number" id="duree" placeholder="Durée (min)" value="60" min="5" class="form-control">
-        </div>
+        // ---------------------------------------------------------------------
+        // GESTION DU LOCAL STORAGE - INCHANGÉE
+        // ---------------------------------------------------------------------
 
-        <div id="date-fields" class="input-row date-fields-hidden">
-            <input type="date" id="date-debut" class="form-control" title="Date de début" required>
-            <input type="time" id="time-debut" class="form-control" title="Heure de début (HH:MM)" value="09:00">
-        </div>
-        
-        <div id="recurrence-field" class="form-group date-fields-hidden">
-             <select id="recurrence" class="form-control">
-                <option value="none">Ne se répète pas</option>
-                <option value="daily">Quotidiennement</option>
-                <option value="weekly">Chaque semaine</option>
-                <option value="monthly">Chaque mois</option>
-            </select>
-        </div>
-        
-        <div id="priority-fields" class="input-row">
-            <select id="importance" class="form-control">
-                <option value="3" selected>Importance: Moyenne (3)</option>
-                <option value="5">Importance: Forte (5)</option>
-                <option value="1">Importance: Faible (1)</option>
-            </select>
-            <select id="urgence" class="form-control">
-                <option value="3" selected>Urgence: Moyenne (3)</option>
-                <option value="5">Urgence: Haute (5)</option>
-                <option value="1">Urgence: Basse (1)</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <input type="text" id="projet" placeholder="Projet (ex: Dev, Finance)" value="Divers" class="form-control">
-        </div>
+        function chargerInventaireLocal() {
+            try {
+                const data = localStorage.getItem(LOCAL_STORAGE_KEY);
+                inventaireGlobal = data ? JSON.parse(data) : [];
+            } catch (error) {
+                console.error("Erreur LocalStorage:", error);
+                inventaireGlobal = [];
+            }
+        }
 
-        <button onclick="ajouterTache()" class="btn">
-            Ajouter & Prioriser
-        </button>
+        function sauvegarderInventaireLocal(nouveauInventaire) {
+            inventaireGlobal = nouveauInventaire;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(inventaireGlobal));
+            fetchPriorites(); 
+            renderCalendar(); 
+        }
+
+        // ---------------------------------------------------------------------
+        // COMMUNICATION API - INCHANGÉE
+        // ---------------------------------------------------------------------
+
+        async function apiPost(endpoint, dataToSend) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSend)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error("Erreur API:", error);
+                alert(`Erreur: ${error.message}`);
+                return null;
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // LOGIQUE MÉTIER (TÂCHES) - MISE À JOUR DES LOGIQUES DATE
+        // ---------------------------------------------------------------------
+
+        // fetchPriorites() - INCHANGÉE, sauf pour les classes et onclick
+        async function fetchPriorites() {
+            const listElement = document.getElementById('priority-list');
+            listElement.innerHTML = '<div class="empty-state">Calcul...</div>';
+
+            const priorites = await apiPost('/api/v1/taches/priorite', { inventaire: inventaireGlobal });
+
+            if (priorites && priorites.length > 0) {
+                listElement.innerHTML = ''; 
+                priorites.forEach(tache => {
+                    const item = document.createElement('div');
+                    
+                    let priorityClass = 'low';
+                    if (tache.urgence >= 4 || tache.importance >= 4) priorityClass = 'medium';
+                    if (tache.urgence === 5 && tache.importance === 5) priorityClass = 'high';
+                    
+                    item.className = `task-item ${priorityClass}`;
+                    item.setAttribute('onclick', `openEditModal(${tache.db_id})`);
+                    
+                    // Formatage de la date de début pour l'affichage (si elle existe)
+                    let dateInfo = '';
+                    if (tache.date_debut) {
+                        const dateObj = new Date(tache.date_debut);
+                        // Afficher JJ/MM à l'heure (HH:MM)
+                        dateInfo = ` | Début: ${dateObj.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} ${dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+                    }
+
+                    item.innerHTML = `
+                        <div class="task-info">
+                            <strong>${tache.nom}</strong>
+                            <small>${tache.projet} | Imp: ${tache.importance} | Urg: ${tache.urgence} | Durée: ${tache.duree_totale_minutes}min${dateInfo}</small>
+                        </div>
+                        <button class="btn btn-terminer" onclick="event.stopPropagation(); terminerTache(${tache.db_id})">Terminer</button>
+                    `;
+                    listElement.appendChild(item);
+                });
+            } else if (priorites) {
+                listElement.innerHTML = '<div class="empty-state">✅ Aucune tâche active.</div>';
+            }
+        }
+
+
+        // --- MISE À JOUR : Gestion des Heures et Récurrence dans AjouterTache ---
+        async function ajouterTache() {
+            const nom = document.getElementById('nom').value;
+            const typeEvent = document.getElementById('type-event').value;
+            const importance = document.getElementById('importance').value;
+            const urgence = document.getElementById('urgence').value;
+            const duree = document.getElementById('duree').value;
+            const projet = document.getElementById('projet').value;
+            const dateDebutInput = document.getElementById('date-debut').value;
+            const timeDebutInput = document.getElementById('time-debut').value; // NOUVEAU
+            const recurrenceInput = document.getElementById('recurrence').value; // NOUVEAU
+            
+            if (!nom || !duree) {
+                alert("Veuillez remplir le nom et la durée.");
+                return;
+            }
+            
+            let dateDebutISO = null;
+            let dateFinISO = null;
+            
+            if (typeEvent === 'RendezVous' && dateDebutInput) {
+                // Combinaison de la date et de l'heure
+                const dateHeureDebut = new Date(`${dateDebutInput}T${timeDebutInput || '09:00'}:00`);
+                dateDebutISO = dateHeureDebut.toISOString();
+                
+                // Calcul simple de la date/heure de fin (dateDebut + duree)
+                const dateHeureFin = new Date(dateHeureDebut.getTime() + (parseInt(duree) * 60000)); // durée en millisecondes
+                dateFinISO = dateHeureFin.toISOString();
+            }
+            
+            const payload = {
+                inventaire: inventaireGlobal, 
+                nom: nom,
+                type_event: typeEvent,
+                // On inclut ces champs même pour les RendezVous, mais l'API les ignore dans la priorisation
+                importance: importance, 
+                urgence: urgence,
+                duree: duree,
+                projet: projet,
+                
+                date_debut: dateDebutISO, 
+                date_fin: dateFinISO,
+                recurrence: recurrenceInput // Le champ est là, la logique de génération des futurs événements sera pour plus tard
+            };
+
+            const nouvelInventaire = await apiPost('/api/v1/taches/ajouter', payload);
+            
+            if (nouvelInventaire) {
+                sauvegarderInventaireLocal(nouvelInventaire);
+                // Réinitialiser le formulaire
+                document.getElementById('nom').value = '';
+                document.getElementById('projet').value = 'Divers';
+                document.getElementById('date-debut').value = '';
+            }
+        }
+        
+        // terminerTache() - INCHANGÉE
+        // ...
+
+        // ---------------------------------------------------------------------
+        // NOUVEAU : FONCTIONS DU MODAL D'ÉDITION - INCHANGÉES
+        // ---------------------------------------------------------------------
+        
+        function openEditModal(db_id) {
+            const event = inventaireGlobal.find(e => e.db_id === db_id);
+            if (!event) {
+                alert("Erreur: Impossible de trouver l'événement.");
+                return;
+            }
+
+            // ... (Code de remplissage du modal inchangé) ...
+            document.getElementById('edit-db-id').value = event.db_id;
+            document.getElementById('edit-nom').value = event.nom;
+            document.getElementById('edit-importance').value = event.importance;
+            document.getElementById('edit-urgence').value = event.urgence;
+            document.getElementById('edit-duree').value = event.duree_totale_minutes;
+            document.getElementById('edit-projet').value = event.projet;
+
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+        }
+
+        function saveTaskChanges() {
+            const db_id = parseInt(document.getElementById('edit-db-id').value);
+            const eventIndex = inventaireGlobal.findIndex(e => e.db_id === db_id);
+            if (eventIndex === -1) {
+                alert("Erreur: Impossible de sauvegarder les modifications.");
+                return;
+            }
+
+            inventaireGlobal[eventIndex].nom = document.getElementById('edit-nom').value;
+            inventaireGlobal[eventIndex].importance = parseInt(document.getElementById('edit-importance').value);
+            inventaireGlobal[eventIndex].urgence = parseInt(document.getElementById('edit-urgence').value);
+            inventaireGlobal[eventIndex].duree_totale_minutes = parseInt(document.getElementById('edit-duree').value);
+            inventaireGlobal[eventIndex].projet = document.getElementById('edit-projet').value;
+
+            sauvegarderInventaireLocal(inventaireGlobal);
+            closeEditModal();
+        }
+        
+        function deleteTask() {
+            if (!confirm("Êtes-vous sûr de vouloir supprimer cet événement définitivement ?")) return;
+            
+            const db_id = parseInt(document.getElementById('edit-db-id').value);
+            const nouvelInventaire = inventaireGlobal.filter(e => e.db_id !== db_id);
+            
+            sauvegarderInventaireLocal(nouvelInventaire);
+            closeEditModal();
+        }
+
+
+        // ---------------------------------------------------------------------
+        // LOGIQUE MÉTIER (CALENDRIER) - INCHANGÉE
+        // ---------------------------------------------------------------------
+
+        function changeMonth(delta) {
+            dateActuelle.setMonth(dateActuelle.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const calendarDisplay = document.getElementById('calendar-display');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); 
+            calendarDisplay.innerHTML = ''; 
+            
+            const monthYear = dateActuelle.toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
+            calendarDisplay.innerHTML += `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <button class="btn" style="width: 40px; padding: 5px; font-size: 1.2em;" onclick="changeMonth(-1)">&#9664;</button>
+                    <h3 style="margin: 0;">${monthYear.charAt(0).toUpperCase() + monthYear.slice(1)}</h3>
+                    <button class="btn" style="width: 40px; padding: 5px; font-size: 1.2em;" onclick="changeMonth(1)">&#9654;</button>
+                </div>
+            `;
+
+            let gridHTML = '<div id="calendar-grid">';
+            JOURS.forEach(day => gridHTML += `<div class="day-header">${day}</div>`);
+
+            const annee = dateActuelle.getFullYear();
+            const mois = dateActuelle.getMonth();
+            const premierJour = new Date(annee, mois, 1);
+            const dernierJour = new Date(annee, mois + 1, 0);
+            
+            let decalage = (premierJour.getDay() === 0) ? 6 : premierJour.getDay() - 1; 
+
+            for (let i = 0; i < decalage; i++) {
+                gridHTML += '<div class="day-cell" style="background: none; cursor: default;"></div>';
+            }
+
+            for (let jour = 1; jour <= dernierJour.getDate(); jour++) {
+                const dateCellule = new Date(annee, mois, jour);
+                const estAujourdhui = dateCellule.getTime() === today.getTime();
+                
+                let classes = 'day-cell';
+                if (estAujourdhui) classes += ' current-day';
+                
+                // Recherche des événements (y compris récurrents simples - non implémenté ici, juste le point de départ)
+                const evenementsDuJour = inventaireGlobal.filter(e => {
+                    if (e.type_event !== 'RendezVous' || !e.date_debut || e.est_complete) return false;
+                    
+                    const dateDebut = new Date(e.date_debut);
+                    const dateFin = e.date_fin ? new Date(e.date_fin) : dateDebut;
+                    
+                    dateDebut.setHours(0, 0, 0, 0);
+                    dateFin.setHours(23, 59, 59, 999);
+                    
+                    // Cette vérification gère les événements qui durent plusieurs jours
+                    return dateCellule >= dateDebut && dateCellule <= dateFin;
+                });
+
+                const indicateurEvent = evenementsDuJour.length > 0 ? '<span class="event-indicator"></span>' : '';
+                
+                gridHTML += `<div class="${classes}" 
+                                 onclick="showDayDetails(${jour}, ${mois}, ${annee})">
+                                 ${jour}
+                                 ${indicateurEvent}
+                             </div>`;
+            }
+
+            gridHTML += '</div>';
+            calendarDisplay.innerHTML += gridHTML;
+            
+            const detailsDiv = document.getElementById('day-details');
+            if (detailsDiv) {
+                detailsDiv.style.display = 'none';
+                detailsDiv.innerHTML = '';
+            } else {
+                 calendarDisplay.innerHTML += '<div id="day-details" class="event-details" style="display: none;"></div>';
+            }
+        }
+
+        function showDayDetails(jour, mois, annee) {
+             const detailsDiv = document.getElementById('day-details');
+            detailsDiv.style.display = 'block';
+            
+            const dateSelectionnee = new Date(annee, mois, jour);
+            
+            const evenementsDuJour = inventaireGlobal.filter(e => {
+                if (e.est_complete || !e.date_debut) return false;
+                
+                const dateDebut = new Date(e.date_debut);
+                const dateFin = e.date_fin ? new Date(e.date_fin) : dateDebut;
+                
+                dateDebut.setHours(0, 0, 0, 0);
+                dateFin.setHours(23, 59, 59, 999);
+                
+                // On affiche les tâches et événements qui tombent ce jour
+                return dateSelectionnee >= dateDebut && dateSelectionnee <= dateFin;
+            });
+
+            let htmlDetails = `<h4>Détails du ${jour}/${mois + 1}/${annee} :</h4>`;
+
+            if (evenementsDuJour.length > 0) {
+                evenementsDuJour.forEach(e => {
+                    const type = e.type_event === 'RendezVous' ? 'RDV' : 'Tâche';
+                    const couleur = e.type_event === 'RendezVous' ? '#3498db' : '#f39c12';
+                    
+                    // Formatage de l'heure
+                    const heureDebut = new Date(e.date_debut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+                    htmlDetails += `
+                        <p style="margin: 5px 0; padding-left: 10px; border-left: 3px solid ${couleur}; cursor: pointer;"
+                           onclick="openEditModal(${e.db_id})">
+                            <strong style="color: ${couleur};">${type} (${heureDebut})</strong> : ${e.nom}
+                        </p>
+                    `;
+                });
+            } else {
+                htmlDetails += '<p>Aucun événement ou tâche planifiée pour ce jour.</p>';
+            }
+            detailsDiv.innerHTML = htmlDetails;
+        }
+
+
+        // ---------------------------------------------------------------------
+        // FONCTIONS DE SAUVEGARDE (Inchangées)
+        // ---------------------------------------------------------------------
+        
+        function telechargerInventaire() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(inventaireGlobal, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `assistant_inventaire_${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            alert("Inventaire JSON téléchargé !");
+        }
+
+        function chargerFichierInventaire(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.type !== "application/json") {
+                alert("Veuillez sélectionner un fichier JSON valide.");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!Array.isArray(data)) throw new Error("Format JSON non valide.");
+                    sauvegarderInventaireLocal(data);
+                    alert("Inventaire chargé avec succès !");
+                } catch (error) {
+                    alert(`Erreur: Impossible de lire le fichier. (${error.message})`);
+                }
+            };
+            reader.readAsText(file);
+            document.getElementById('uploadFile').value = ''; 
+        }
+
+        // ---------------------------------------------------------------------
+        // DÉMARRAGE DE L'APPLICATION (Inchangé)
+        // ---------------------------------------------------------------------
+
+        window.onload = () => {
+            chargerInventaireLocal();
+            toggleDateFields(); 
+            const tasksNav = document.querySelector('.nav-item[data-view="tasks-view"]');
+            changeView('tasks-view', tasksNav);
+            fetchPriorites();
+        };
+
+    </script>
