@@ -1,4 +1,423 @@
-<script>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Assistant Personnel</title>
+    <style>
+        /* Styles Globaux */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: center;
+            background-color: #34495e;
+            padding: 0;
+        }
+
+        .nav-item {
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 500;
+            color: #ecf0f1;
+            text-decoration: none;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: #4a637c;
+        }
+
+        .nav-item.active {
+            background-color: #2c3e50;
+            border-bottom-color: #3498db;
+        }
+
+        /* Contenu Principal */
+        main {
+            padding: 20px;
+        }
+
+        .content-section {
+            display: none;
+            padding-top: 20px;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+        
+        /* Formulaires */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        /* Boutons */
+        .btn {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-terminer {
+            background-color: #2ecc71;
+        }
+
+        .btn-terminer:hover {
+            background-color: #27ae60;
+        }
+
+        /* Liste de Priorités */
+        #priority-list {
+            margin-top: 20px;
+        }
+
+        .task-item {
+            background-color: #ecf0f1;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .task-item.high { border-left-color: #e74c3c; } /* Rouge */
+        .task-item.medium { border-left-color: #f39c12; } /* Orange */
+        .task-item.low { border-left-color: #3498db; } /* Bleu */
+        
+        .task-info {
+            flex-grow: 1;
+        }
+
+        .task-info strong {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 1.1em;
+        }
+
+        .task-info small {
+            color: #7f8c8d;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            border: 1px dashed #ccc;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        /* Calendrier */
+        #calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #ddd;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .day-header {
+            background-color: #34495e;
+            color: white;
+            text-align: center;
+            padding: 10px 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .day-cell {
+            background-color: white;
+            padding: 10px 5px;
+            text-align: center;
+            min-height: 50px;
+            font-weight: 500;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .day-cell:hover {
+            background-color: #f0f8ff;
+        }
+
+        .current-day {
+            border: 2px solid #e74c3c;
+            background-color: #fff0f0;
+        }
+
+        .event-indicator {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            background-color: #3498db;
+            border-radius: 50%;
+        }
+
+        .event-details {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+        }
+        
+        /* Modal d'édition */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4); 
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .date-fields-hidden {
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="main-title">Tâches Actives</h1>
+        </header>
+
+        <nav>
+            <div class="nav-item active" data-view="tasks-view" onclick="changeView('tasks-view', this)">Priorités</div>
+            <div class="nav-item" data-view="calendar-view" onclick="changeView('calendar-view', this)">Calendrier</div>
+            <div class="nav-item" data-view="settings-view" onclick="changeView('settings-view', this)">Configuration</div>
+        </nav>
+
+        <main>
+            <section id="tasks-view" class="content-section active">
+                <h2>Nouvel Événement/Tâche</h2>
+                <form id="add-task-form" onsubmit="event.preventDefault(); ajouterTache()">
+                    <div class="form-group">
+                        <label for="type-event">Type :</label>
+                        <select id="type-event" onchange="toggleDateFields()">
+                            <option value="Tache">Tâche (À prioriser)</option>
+                            <option value="RendezVous">Rendez-vous (Planifié)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nom">Nom de l'événement / Tâche :</label>
+                        <input type="text" id="nom" required>
+                    </div>
+
+                    <div id="priority-fields" class="form-group">
+                        <div style="display: flex; gap: 15px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="importance">Importance (1-5) :</label>
+                                <input type="number" id="importance" min="1" max="5" value="3">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="urgence">Urgence (1-5) :</label>
+                                <input type="number" id="urgence" min="1" max="5" value="3">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="duree">Durée estimée (minutes) :</label>
+                        <input type="number" id="duree" required value="60" min="10">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="projet">Projet :</label>
+                        <input type="text" id="projet" value="Divers">
+                    </div>
+                    
+                    <div id="date-fields" class="date-fields-hidden">
+                        <div style="display: flex; gap: 15px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="date-debut">Date de début :</label>
+                                <input type="date" id="date-debut">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="time-debut">Heure de début :</label>
+                                <input type="time" id="time-debut" value="09:00">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="recurrence-field" class="date-fields-hidden">
+                        <label for="recurrence">Récurrence :</label>
+                        <select id="recurrence">
+                            <option value="none">Aucune</option>
+                            <option value="daily">Quotidienne</option>
+                            <option value="weekly">Hebdomadaire</option>
+                            <option value="monthly">Mensuelle</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn" style="width: 100%;">Ajouter</button>
+                </form>
+
+                <h2 style="margin-top: 30px;">Tâches à Prioriser</h2>
+                <div id="priority-list">
+                    <div class="empty-state">Chargement des tâches...</div>
+                </div>
+            </section>
+
+            <section id="calendar-view" class="content-section">
+                <div id="calendar-display">
+                    <div class="empty-state">Chargement du calendrier...</div>
+                </div>
+                <div id="day-details" class="event-details" style="display: none;"></div>
+            </section>
+
+            <section id="settings-view" class="content-section">
+                <h2>Gestion des Données</h2>
+                <p>Votre inventaire est stocké localement dans votre navigateur (LocalStorage).</p>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <button class="btn" onclick="telechargerInventaire()" style="flex: 1; background-color: #2c3e50;">Exporter (JSON)</button>
+                    <input type="file" id="uploadFile" style="display: none;" onchange="chargerFichierInventaire(event)">
+                    <button class="btn" onclick="document.getElementById('uploadFile').click()" style="flex: 1; background-color: #9b59b6;">Importer (JSON)</button>
+                </div>
+                
+                <h2>Intégration Externe (Prochaine Étape)</h2>
+                <p>C'est ici que nous allons configurer les connexions aux services externes (ex: Google Calendar, Générateur de Code, Suivi Budgétaire).</p>
+            </section>
+        </main>
+        
+        <div id="edit-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeEditModal()">&times;</span>
+                <h3>Modifier l'Événement/Tâche</h3>
+                <form onsubmit="event.preventDefault(); saveTaskChanges()">
+                    <input type="hidden" id="edit-db-id">
+                    <div class="form-group">
+                        <label for="edit-nom">Nom :</label>
+                        <input type="text" id="edit-nom" required>
+                    </div>
+                    <div class="form-group">
+                        <div style="display: flex; gap: 15px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="edit-importance">Importance (1-5) :</label>
+                                <input type="number" id="edit-importance" min="1" max="5">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="edit-urgence">Urgence (1-5) :</label>
+                                <input type="number" id="edit-urgence" min="1" max="5">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-duree">Durée (minutes) :</label>
+                        <input type="number" id="edit-duree" min="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-projet">Projet :</label>
+                        <input type="text" id="edit-projet">
+                    </div>
+                    
+                    <button type="submit" class="btn" style="background-color: #3498db; margin-right: 10px;">Sauvegarder</button>
+                    <button type="button" class="btn" onclick="deleteTask()" style="background-color: #e74c3c;">Supprimer</button>
+                    <button type="button" class="btn" onclick="closeEditModal()" style="background-color: #95a5a6;">Annuler</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
         const API_BASE_URL = window.location.origin;
         const LOCAL_STORAGE_KEY = 'ia_assistant_inventaire';
         let inventaireGlobal = [];
@@ -6,14 +425,11 @@
         let dateActuelle = new Date(); 
 
         // ---------------------------------------------------------------------
-        // NOUVEAU : LOGIQUE D'EXPANSION DE LA RÉCURRENCE
+        // LOGIQUE D'EXPANSION DE LA RÉCURRENCE
         // ---------------------------------------------------------------------
 
         /**
          * Génère les instances futures des événements récurrents pour l'affichage.
-         * Note : Ces instances ne sont PAS sauvegardées dans le localStorage.
-         * @param {Array} inventaire La liste des événements enregistrés.
-         * @returns {Array} La liste complète des événements (originaux + récurrents).
          */
         function expandRecurrences(inventaire) {
             // Commence avec tous les événements actifs (non complétés)
@@ -38,6 +454,7 @@
                     // Génère les instances futures
                     while (currentDate < limitDate) {
                         
+                        // Création d'un nouvel objet pour l'instance récurrente
                         const newInstance = {
                             ...event,
                             // ID temporaire unique pour l'affichage (db_id + timestamp)
@@ -61,8 +478,9 @@
             return expandedList;
         }
 
+
         // ---------------------------------------------------------------------
-        // GESTION DES VUES (ONGLETS) - INCHANGÉE
+        // GESTION DES VUES (ONGLETS)
         // ---------------------------------------------------------------------
 
         function changeView(viewId, clickedElement) {
@@ -83,9 +501,11 @@
                 document.getElementById('main-title').textContent = 'Configuration';
             } else {
                 document.getElementById('main-title').textContent = 'Tâches Actives';
+                fetchPriorites();
             }
         }
         
+        // --- Gère l'affichage des champs de date et récurrence ---
         function toggleDateFields() {
             const type = document.getElementById('type-event').value;
             const dateFields = document.getElementById('date-fields');
@@ -97,31 +517,42 @@
                 recurrenceField.classList.remove('date-fields-hidden');
                 priorityFields.classList.add('date-fields-hidden'); 
             } else { // Tache
-                dateFields.classList.add('date-fields-hidden');
+                // Les tâches peuvent aussi avoir une date/heure si on le souhaite, mais pas de récurrence simple
+                dateFields.classList.remove('date-fields-hidden'); 
                 recurrenceField.classList.add('date-fields-hidden');
                 priorityFields.classList.remove('date-fields-hidden'); 
             }
         }
 
+        /**
+         * Ouvre l'onglet Tâches et pré-remplit le formulaire avec une date donnée.
+         */
         function openAddTaskForm(jour, mois, annee) {
+            // 1. Changer l'onglet pour "Tâches"
             const tasksNav = document.querySelector('.nav-item[data-view="tasks-view"]');
             changeView('tasks-view', tasksNav);
 
+            // 2. Formater la date (YYYY-MM-DD)
             const dateObj = new Date(annee, mois, jour);
             const anneeStr = dateObj.getFullYear();
             const moisStr = String(dateObj.getMonth() + 1).padStart(2, '0');
             const jourStr = String(dateObj.getDate()).padStart(2, '0');
             const dateFormatee = `${anneeStr}-${moisStr}-${jourStr}`;
 
-            document.getElementById('type-event').value = 'RendezVous'; 
+            // 3. Pré-remplir les champs
+            document.getElementById('type-event').value = 'RendezVous'; // On part du principe que c'est un RDV
             document.getElementById('date-debut').value = dateFormatee;
             
+            // 4. S'assurer que les champs de date sont visibles et réinitialiser la récurrence
+            document.getElementById('recurrence').value = 'none';
             toggleDateFields();
+
+            // 5. Mettre le focus sur le nom de l'événement
             document.getElementById('nom').focus();
         }
 
         // ---------------------------------------------------------------------
-        // GESTION DU LOCAL STORAGE & API - INCHANGÉE
+        // GESTION DU LOCAL STORAGE & API
         // ---------------------------------------------------------------------
 
         function chargerInventaireLocal() {
@@ -155,21 +586,20 @@
                 return await response.json();
             } catch (error) {
                 console.error("Erreur API:", error);
-                alert(`Erreur: ${error.message}`);
+                // Utiliser alert() pour que l'utilisateur voie immédiatement l'erreur
+                alert(`Erreur: ${error.message}. Vérifiez les logs côté serveur si l'erreur persiste.`);
                 return null;
             }
         }
 
         // ---------------------------------------------------------------------
-        // LOGIQUE MÉTIER (TÂCHES) - INCHANGÉE
+        // LOGIQUE MÉTIER (TÂCHES)
         // ---------------------------------------------------------------------
 
         async function fetchPriorites() {
             const listElement = document.getElementById('priority-list');
             listElement.innerHTML = '<div class="empty-state">Calcul...</div>';
 
-            // IMPORTANT : On filtre les événements datés et récurrents de la liste de tâches,
-            // pour ne garder que la to-do list pure à prioriser.
             const tachesAPrioriser = inventaireGlobal.filter(e => e.type_event !== 'RendezVous' && e.est_complete !== true);
             
             const priorites = await apiPost('/api/v1/taches/priorite', { inventaire: tachesAPrioriser });
@@ -245,7 +675,8 @@
                 
                 date_debut: dateDebutISO, 
                 date_fin: dateFinISO,
-                recurrence: typeEvent === 'RendezVous' ? recurrenceInput : 'none' // Récurrence uniquement pour les RDV
+                // La récurrence est stockée uniquement si c'est un RendezVous
+                recurrence: typeEvent === 'RendezVous' ? recurrenceInput : 'none' 
             };
 
             const nouvelInventaire = await apiPost('/api/v1/taches/ajouter', payload);
@@ -257,20 +688,19 @@
                 document.getElementById('projet').value = 'Divers';
                 document.getElementById('date-debut').value = '';
                 document.getElementById('type-event').value = 'Tache'; 
-                document.getElementById('recurrence').value = 'none'; // Réinitialiser récurrence
+                document.getElementById('recurrence').value = 'none'; 
                 toggleDateFields();
             }
         }
         
         async function terminerTache(db_id) {
             if (!confirm("Voulez-vous vraiment marquer cet événement comme terminé ?")) return;
-            // Si c'est une instance récurrente, on ne peut pas la marquer terminée car elle est temporaire.
-            // On ne peut marquer terminée que les événements originaux stockés (dont l'ID est un nombre).
+            
+            // Ne permet pas de terminer une instance récurrente temporaire
             if (String(db_id).includes('_')) {
-                 alert("Vous ne pouvez pas marquer une instance récurrente (temporaire) comme terminée. Marquez l'événement original.");
+                 alert("Vous ne pouvez marquer terminée que l'instance originale de l'événement.");
                  return;
             }
-
 
             const payload = { inventaire: inventaireGlobal, db_id: db_id };
             const nouvelInventaire = await apiPost('/api/v1/taches/terminer', payload);
@@ -282,7 +712,7 @@
 
 
         // ---------------------------------------------------------------------
-        // FONCTIONS DU MODAL D'ÉDITION - INCHANGÉES (elles gèrent l'original stocké)
+        // FONCTIONS DU MODAL D'ÉDITION
         // ---------------------------------------------------------------------
         
         function openEditModal(db_id) {
@@ -311,7 +741,12 @@
         function saveTaskChanges() {
             const db_id = parseInt(document.getElementById('edit-db-id').value);
             const eventIndex = inventaireGlobal.findIndex(e => e.db_id === db_id);
-            // ... (logique de sauvegarde inchangée) ...
+            if (eventIndex === -1) {
+                alert("Erreur: Impossible de sauvegarder les modifications.");
+                return;
+            }
+
+            // Mise à jour des propriétés
             inventaireGlobal[eventIndex].nom = document.getElementById('edit-nom').value;
             inventaireGlobal[eventIndex].importance = parseInt(document.getElementById('edit-importance').value);
             inventaireGlobal[eventIndex].urgence = parseInt(document.getElementById('edit-urgence').value);
@@ -334,7 +769,7 @@
 
 
         // ---------------------------------------------------------------------
-        // LOGIQUE MÉTIER (CALENDRIER) - MISES À JOUR
+        // LOGIQUE MÉTIER (CALENDRIER)
         // ---------------------------------------------------------------------
 
         function changeMonth(delta) {
@@ -349,7 +784,6 @@
             calendarDisplay.innerHTML = ''; 
             
             const monthYear = dateActuelle.toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
-            // ... (Affichage du titre et des boutons) ...
             calendarDisplay.innerHTML += `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <button class="btn" style="width: 40px; padding: 5px; font-size: 1.2em;" onclick="changeMonth(-1)">&#9664;</button>
@@ -365,11 +799,9 @@
             const mois = dateActuelle.getMonth();
             const dernierJour = new Date(annee, mois + 1, 0);
             
-            // --- NOUVEAU : Utilisation de la liste des événements étendue ---
+            // UTILISATION DE LA LOGIQUE DE RÉCURRENCE
             const allEvents = expandRecurrences(inventaireGlobal);
             
-            // ... (Calcul du décalage et affichage des jours vides) ...
-
             let premierJour = new Date(annee, mois, 1);
             let decalage = (premierJour.getDay() === 0) ? 6 : premierJour.getDay() - 1; 
 
@@ -384,7 +816,6 @@
                 let classes = 'day-cell';
                 if (estAujourdhui) classes += ' current-day';
                 
-                // Recherche des événements dans la liste étendue
                 const evenementsDuJour = allEvents.filter(e => {
                     if (!e.date_debut || e.est_complete) return false;
                     
@@ -399,9 +830,8 @@
 
                 const indicateurEvent = evenementsDuJour.length > 0 ? '<span class="event-indicator"></span>' : '';
                 
-                // Le clic ouvre le formulaire d'ajout
                 gridHTML += `<div class="${classes}" 
-                                 onclick="openAddTaskForm(${jour}, ${mois}, ${annee})">
+                                 onclick="showDayDetails(${jour}, ${mois}, ${annee})">
                                  ${jour}
                                  ${indicateurEvent}
                              </div>`;
@@ -410,24 +840,22 @@
             gridHTML += '</div>';
             calendarDisplay.innerHTML += gridHTML;
             
-            // ... (Affichage des détails) ...
-            const detailsDiv = document.getElementById('day-details');
-            if (detailsDiv) {
-                detailsDiv.style.display = 'none';
-                detailsDiv.innerHTML = '';
-            } else {
+            // Ajoute l'élément de détails s'il n'existe pas
+            if (!document.getElementById('day-details')) {
                  calendarDisplay.innerHTML += '<div id="day-details" class="event-details" style="display: none;"></div>';
+            } else {
+                document.getElementById('day-details').style.display = 'none';
+                document.getElementById('day-details').innerHTML = '';
             }
         }
         
-        // --- showDayDetails utilise aussi expandRecurrences ---
+        // --- Affiche les détails du jour et permet l'ajout/édition ---
         function showDayDetails(jour, mois, annee) {
-             const detailsDiv = document.getElementById('day-details');
+            const detailsDiv = document.getElementById('day-details');
             detailsDiv.style.display = 'block';
             
             const dateSelectionnee = new Date(annee, mois, jour);
             
-            // --- NOUVEAU : Utilisation de la liste des événements étendue ---
             const allEvents = expandRecurrences(inventaireGlobal);
             
             const evenementsDuJour = allEvents.filter(e => {
@@ -450,13 +878,12 @@
                     const couleur = e.type_event === 'RendezVous' ? '#3498db' : '#f39c12';
                     
                     const heureDebut = new Date(e.date_debut).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    const recurrenceTag = e.is_recurring_instance ? ' (Répétition)' : '';
 
-                    // Le clic ouvre le modal d'édition de l'événement original
                     htmlDetails += `
                         <p style="margin: 5px 0; padding-left: 10px; border-left: 3px solid ${couleur}; cursor: pointer;"
                            onclick="openEditModal(${e.db_id})">
-                            <strong style="color: ${couleur};">${type} (${heureDebut})</strong> : ${e.nom}
-                            ${e.is_recurring_instance ? ' (Répétition)' : ''}
+                            <strong style="color: ${couleur};">${type} (${heureDebut})</strong> : ${e.nom}${recurrenceTag}
                         </p>
                     `;
                 });
@@ -468,7 +895,7 @@
 
 
         // ---------------------------------------------------------------------
-        // FONCTIONS DE SAUVEGARDE (Inchangées)
+        // FONCTIONS DE SAUVEGARDE
         // ---------------------------------------------------------------------
         
         function telechargerInventaire() {
@@ -505,15 +932,18 @@
         }
 
         // ---------------------------------------------------------------------
-        // DÉMARRAGE DE L'APPLICATION (Inchangé)
+        // DÉMARRAGE DE L'APPLICATION
         // ---------------------------------------------------------------------
 
         window.onload = () => {
             chargerInventaireLocal();
             toggleDateFields(); 
+            // S'assurer que la vue par défaut est bien activée après le chargement
             const tasksNav = document.querySelector('.nav-item[data-view="tasks-view"]');
             changeView('tasks-view', tasksNav);
-            fetchPriorites();
+            // La fonction changeView('tasks-view', ...) appelle déjà fetchPriorites()
         };
 
     </script>
+</body>
+</html>
