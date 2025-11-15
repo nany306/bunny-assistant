@@ -5,149 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mon Assistant IA</title>
     <style>
-        /* --- Styles de Base et Mobile-First --- */
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            padding-bottom: 60px; /* Espace pour la barre de navigation fixe */
-            background-color: #f4f4f9; 
-            color: #333;
-        }
-        .container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 20px;
-        }
-        .content-section {
-            background: #fff;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-        }
-        h1 { 
-            color: #2c3e50; 
-            text-align: center; 
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-        
-        /* --- Formulaire et Boutons --- */
+        /* (Styles CSS de la version précédente - inchangés) */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding-bottom: 60px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .content-section { display: none; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); margin-bottom: 20px; }
+        .content-section.active { display: block; }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 20px; font-size: 1.5em; }
         .form-group { margin-bottom: 10px; }
-        .form-control { 
-            width: 100%; 
-            padding: 10px; 
-            border: 1px solid #ccc; 
-            border-radius: 6px; 
-            box-sizing: border-box; /* Inclut padding et border dans la largeur */
-        }
-        /* Regroupement des inputs de priorité (flexbox) */
-        .input-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
         .input-row .form-control { flex: 1; }
-
-        .btn { 
-            background-color: #3498db; 
-            color: white; 
-            padding: 12px; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-size: 16px; 
-            transition: background-color 0.3s;
-            width: 100%;
-        }
+        .btn { background-color: #3498db; color: white; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; transition: background-color 0.3s; width: 100%; }
         .btn:hover { background-color: #2980b9; }
-
-        /* --- Liste de Priorité --- */
-        .task-item { 
-            background: #ecf0f1; 
-            padding: 15px; 
-            margin-bottom: 10px; 
-            border-radius: 8px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-left: 5px solid; /* La couleur sera définie par JS */
-        }
-        .task-item.high { border-left-color: #e74c3c; } /* Rouge */
-        .task-item.medium { border-left-color: #f39c12; } /* Orange */
-        .task-item.low { border-left-color: #2ecc71; } /* Vert */
+        .task-item { background: #ecf0f1; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid; }
+        .task-item.high { border-left-color: #e74c3c; }
+        .task-item.medium { border-left-color: #f39c12; }
+        .task-item.low { border-left-color: #2ecc71; }
         .task-info { flex-grow: 1; }
         .task-info strong { display: block; font-size: 1.1em; }
-        .btn-terminer { 
-            background-color: #e74c3c; 
-            padding: 8px 12px; 
-            margin-left: 10px;
-            font-size: 14px;
-            width: auto;
-        }
+        .btn-terminer { background-color: #e74c3c; padding: 8px 12px; margin-left: 10px; font-size: 14px; width: auto; }
         .btn-terminer:hover { background-color: #c0392b; }
-
-        /* --- Section Réglages et Sauvegarde --- */
-        .settings-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 15px;
-        }
+        .settings-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
         .btn-green { background-color: #27ae60; }
         .btn-green:hover { background-color: #219d54; }
         .btn-orange { background-color: #f39c12; }
         .btn-orange:hover { background-color: #e67e22; }
-
-        /* --- Barre de Navigation Basse (Inspiration App Mobile) --- */
-        .nav-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background-color: #fff;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #7f8c8d;
-            cursor: pointer;
-            font-size: 12px;
-            padding: 5px 10px;
-        }
-        .nav-item.active {
-            color: #3498db;
-        }
-        .nav-icon {
-            font-size: 24px;
-            margin-bottom: 2px;
-        }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background-color: #fff; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-around; align-items: center; max-width: 600px; margin: 0 auto; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #7f8c8d; cursor: pointer; font-size: 12px; padding: 5px 10px; }
+        .nav-item.active { color: #3498db; }
+        .nav-icon { font-size: 24px; margin-bottom: 2px; }
+        
+        /* --- Styles du Calendrier (Inchangés) --- */
+        #calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; margin-top: 10px; }
+        .day-header { font-weight: bold; color: #7f8c8d; padding: 5px 0; }
+        .day-cell { padding: 10px 5px; border-radius: 8px; background-color: #f8f8f8; position: relative; cursor: pointer; transition: background-color 0.2s; font-size: 0.9em; }
+        .day-cell:hover { background-color: #e0e0e0; }
+        .current-day { background-color: #3498db !important; color: white; font-weight: bold; }
+        .event-indicator { width: 6px; height: 6px; background-color: #e74c3c; border-radius: 50%; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); }
+        .event-details { margin-top: 10px; padding: 10px; background: #ecf0f1; border-radius: 8px; border-left: 5px solid #3498db; }
+        
+        /* Classe pour cacher les champs de date */
+        .date-fields-hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 id="main-title">Tâches Actives et Prioritaires</h1>
+        <h1 id="main-title">Tâches Actives</h1>
 
-        <div id="calendar-view" class="content-section" style="display: none;">
+        <div id="calendar-view" class="content-section">
             <h2>📅 Mon Calendrier</h2>
-            <p>
-                *Ici sera affiché le calendrier pour visualiser les événements planifiés.*
-                <br>
-                (Fonctionnalité en cours de construction : nous allons y ajouter la visualisation bientôt.)
-            </p>
-            <div id="calendar-display"></div>
+            <div id="calendar-display">
+                </div>
+            <div id="day-details" class="event-details" style="display: none;"></div>
         </div>
 
-
-        <div id="tasks-view" class="content-section">
+        <div id="tasks-view" class="content-section active">
             <h2>Nouvelle Tâche / Événement</h2>
             
             <div class="form-group">
@@ -155,14 +67,19 @@
             </div>
 
             <div class="input-row">
-                <select id="type-event" class="form-control">
+                <select id="type-event" class="form-control" onchange="toggleDateFields()">
                     <option value="Tache">Type: Tâche à faire</option>
                     <option value="RendezVous">Type: Rendez-vous / Événement</option>
                 </select>
                 <input type="number" id="duree" placeholder="Durée (min)" value="60" min="5" class="form-control">
             </div>
 
-            <div class="input-row">
+            <div id="date-fields" class="input-row date-fields-hidden">
+                <input type="date" id="date-debut" class="form-control" title="Date de début">
+                <input type="date" id="date-fin" class="form-control" title="Date de fin (optionnel)">
+            </div>
+            
+            <div id="priority-fields" class="input-row">
                 <select id="importance" class="form-control">
                     <option value="3" selected>Importance: Moyenne (3)</option>
                     <option value="5">Importance: Forte (5)</option>
@@ -185,20 +102,17 @@
             
             <hr style="margin: 20px 0;">
 
-            <h3>Liste Prioritaire</h3>
+            <h3>Liste Prioritaire (Tâches)</h3>
             <div id="priority-list">
                 <div class="empty-state">Chargement...</div>
             </div>
         </div>
 
-
-        <div id="settings-view" class="content-section" style="display: none;">
+        <div id="settings-view" class="content-section">
             <h2>⚙️ Réglages et Sauvegarde</h2>
             <hr>
             <h3>Gestion de l'Inventaire (JSON)</h3>
-            <p>
-                Utilisez ces outils pour sauvegarder (Télécharger) ou restaurer (Charger) votre liste de tâches pour la synchronisation Cloud.
-            </p>
+            <p>Sauvegardez (Télécharger) ou restaurez (Charger) votre liste.</p>
             <div class="settings-actions">
                 <button class="btn btn-green" onclick="telechargerInventaire()">
                     💾 Télécharger l'Inventaire
@@ -209,7 +123,6 @@
                 <input type="file" id="uploadFile" style="display: none;" onchange="chargerFichierInventaire(event)">
             </div>
         </div>
-
     </div>
 
     <div class="nav-bar">
@@ -226,55 +139,63 @@
 
 
     <script>
-        // L'URL de votre API sur Render
         const API_BASE_URL = window.location.origin;
         const LOCAL_STORAGE_KEY = 'ia_assistant_inventaire';
-
-        // Variable globale (la "mémoire" du client)
         let inventaireGlobal = [];
+        const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        let dateActuelle = new Date(); // Pour le calendrier
 
         // ---------------------------------------------------------------------
         // GESTION DES VUES (ONGLETS)
         // ---------------------------------------------------------------------
 
         function changeView(viewId, clickedElement) {
-            // Masquer toutes les sections de contenu
-            document.getElementById('calendar-view').style.display = 'none';
-            document.getElementById('tasks-view').style.display = 'none';
-            document.getElementById('settings-view').style.display = 'none';
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(viewId).classList.add('active');
 
-            // Afficher la section souhaitée
-            document.getElementById(viewId).style.display = 'block';
-
-            // Mettre à jour la classe "active" dans la barre de navigation
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
             clickedElement.classList.add('active');
 
-            // Mettre à jour le titre principal
+            // Mettre à jour le titre et rafraîchir le calendrier si besoin
             if (viewId === 'calendar-view') {
                 document.getElementById('main-title').textContent = 'Mon Calendrier';
+                renderCalendar(); // Rafraîchir le calendrier à chaque affichage
             } else if (viewId === 'settings-view') {
-                document.getElementById('main-title').textContent = 'Configuration de l\'Assistant';
+                document.getElementById('main-title').textContent = 'Configuration';
             } else {
-                document.getElementById('main-title').textContent = 'Tâches Actives et Prioritaires';
+                document.getElementById('main-title').textContent = 'Tâches Actives';
+            }
+        }
+        
+        // --- NOUVEAU: Gère l'affichage des champs de date ---
+        function toggleDateFields() {
+            const type = document.getElementById('type-event').value;
+            const dateFields = document.getElementById('date-fields');
+            const priorityFields = document.getElementById('priority-fields');
+            
+            if (type === 'RendezVous') {
+                dateFields.classList.remove('date-fields-hidden');
+                priorityFields.classList.add('date-fields-hidden'); // On cache Urg/Imp pour les RDV
+            } else { // Tache
+                dateFields.classList.add('date-fields-hidden');
+                priorityFields.classList.remove('date-fields-hidden'); // On montre Urg/Imp
             }
         }
 
-
         // ---------------------------------------------------------------------
-        // 1. GESTION DU LOCAL STORAGE (Persistance Côté Mobile)
+        // GESTION DU LOCAL STORAGE
         // ---------------------------------------------------------------------
 
         function chargerInventaireLocal() {
             try {
                 const data = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (data) {
-                    inventaireGlobal = JSON.parse(data);
-                }
+                inventaireGlobal = data ? JSON.parse(data) : [];
             } catch (error) {
-                console.error("Erreur de chargement LocalStorage:", error);
+                console.error("Erreur LocalStorage:", error);
                 inventaireGlobal = [];
             }
         }
@@ -282,11 +203,12 @@
         function sauvegarderInventaireLocal(nouveauInventaire) {
             inventaireGlobal = nouveauInventaire;
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(inventaireGlobal));
-            fetchPriorites(); // Rafraîchir l'affichage après la sauvegarde
+            fetchPriorites(); // Rafraîchir la liste des tâches
+            renderCalendar(); // Rafraîchir aussi le calendrier
         }
 
         // ---------------------------------------------------------------------
-        // 2. COMMUNICATION API 
+        // COMMUNICATION API 
         // ---------------------------------------------------------------------
 
         async function apiPost(endpoint, dataToSend) {
@@ -296,69 +218,59 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dataToSend)
                 });
-
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
                 }
-                
                 return await response.json();
             } catch (error) {
                 console.error("Erreur API:", error);
-                alert(`Erreur de connexion ou de traitement : ${error.message}`);
+                alert(`Erreur: ${error.message}`);
                 return null;
             }
         }
 
         // ---------------------------------------------------------------------
-        // 3. LOGIQUE MÉTIER
+        // LOGIQUE MÉTIER (TÂCHES)
         // ---------------------------------------------------------------------
 
-        // Affiche la liste des tâches prioritaires
         async function fetchPriorites() {
             const listElement = document.getElementById('priority-list');
-            listElement.innerHTML = '<div class="empty-state">Calcul de priorité...</div>';
+            listElement.innerHTML = '<div class="empty-state">Calcul...</div>';
 
-            // Envoie l'inventaire complet pour que l'API puisse faire le calcul
             const priorites = await apiPost('/api/v1/taches/priorite', { inventaire: inventaireGlobal });
 
             if (priorites && priorites.length > 0) {
-                listElement.innerHTML = ''; // Vider le message de chargement
+                listElement.innerHTML = ''; 
                 priorites.forEach(tache => {
-                    // N'afficher que les tâches qui ne sont PAS des RendezVous et qui ne sont pas terminées
-                    if (tache.type_event !== 'RendezVous' && !tache.est_complete) {
-                        const item = document.createElement('div');
-                        
-                        // Détermine la classe de couleur basée sur le score
-                        let priorityClass = 'low';
-                        if (tache.score_priorite >= 8) {
-                            priorityClass = 'high';
-                        } else if (tache.score_priorite >= 4) {
-                            priorityClass = 'medium';
-                        }
-                        
-                        item.className = `task-item ${priorityClass}`;
-                        item.innerHTML = `
-                            <div class="task-info">
-                                <strong>${tache.nom}</strong>
-                                <small>${tache.projet} | Imp: ${tache.importance} | Urg: ${tache.urgence} | Durée: ${tache.duree_totale_minutes}min</small>
-                            </div>
-                            <button class="btn btn-terminer" onclick="terminerTache(${tache.db_id})">Terminer</button>
-                        `;
-                        listElement.appendChild(item);
+                    // (L'API ne retourne que les tâches actives, pas besoin de re-filtrer)
+                    const item = document.createElement('div');
+                    
+                    // Note: Le score n'est plus envoyé par l'API (masqué)
+                    // On peut recréer une classe simple basée sur Urg/Imp
+                    let priorityClass = 'low';
+                    if (tache.urgence >= 4 || tache.importance >= 4) {
+                        priorityClass = 'medium';
                     }
+                    if (tache.urgence === 5 && tache.importance === 5) {
+                        priorityClass = 'high';
+                    }
+                    
+                    item.className = `task-item ${priorityClass}`;
+                    item.innerHTML = `
+                        <div class="task-info">
+                            <strong>${tache.nom}</strong>
+                            <small>${tache.projet} | Imp: ${tache.importance} | Urg: ${tache.urgence} | Durée: ${tache.duree_totale_minutes}min</small>
+                        </div>
+                        <button class="btn btn-terminer" onclick="terminerTache(${tache.db_id})">Terminer</button>
+                    `;
+                    listElement.appendChild(item);
                 });
-                
-                if (listElement.childElementCount === 0) {
-                    listElement.innerHTML = '<div class="empty-state">✅ Aucune tâche active n\'est à prioriser.</div>';
-                }
-
             } else if (priorites) {
-                listElement.innerHTML = '<div class="empty-state">✅ Aucune tâche active n\'est à prioriser.</div>';
+                listElement.innerHTML = '<div class="empty-state">✅ Aucune tâche active.</div>';
             }
         }
 
-        // Ajout d'une nouvelle tâche (envoie la tâche + l'inventaire existant)
         async function ajouterTache() {
             const nom = document.getElementById('nom').value;
             const typeEvent = document.getElementById('type-event').value;
@@ -366,24 +278,29 @@
             const urgence = document.getElementById('urgence').value;
             const duree = document.getElementById('duree').value;
             const projet = document.getElementById('projet').value;
+            
+            // --- NOUVEAU: Gestion des dates ---
+            const dateDebutInput = document.getElementById('date-debut').value;
+            const dateFinInput = document.getElementById('date-fin').value;
 
             if (!nom || !duree) {
-                alert("Veuillez remplir le nom et la durée de la tâche.");
+                alert("Veuillez remplir le nom et la durée.");
                 return;
             }
             
-            // Créer le payload pour l'API
             const payload = {
-                inventaire: inventaireGlobal, // L'inventaire existant
+                inventaire: inventaireGlobal, 
                 nom: nom,
                 type_event: typeEvent,
                 importance: importance,
                 urgence: urgence,
                 duree: duree,
-                projet: projet
+                projet: projet,
+                // Envoie les dates si elles sont définies, sinon null
+                date_debut: dateDebutInput ? new Date(dateDebutInput).toISOString() : null,
+                date_fin: dateFinInput ? new Date(dateFinInput).toISOString() : null
             };
 
-            // L'API nous retourne l'inventaire complet mis à jour
             const nouvelInventaire = await apiPost('/api/v1/taches/ajouter', payload);
             
             if (nouvelInventaire) {
@@ -391,20 +308,15 @@
                 // Réinitialiser le formulaire
                 document.getElementById('nom').value = '';
                 document.getElementById('projet').value = 'Divers';
+                document.getElementById('date-debut').value = '';
+                document.getElementById('date-fin').value = '';
             }
         }
 
-        // Terminer une tâche (envoie l'ID + l'inventaire existant)
         async function terminerTache(db_id) {
-            if (!confirm("Voulez-vous vraiment marquer cette tâche comme terminée ?")) return;
+            if (!confirm("Voulez-vous vraiment marquer cet événement comme terminé ?")) return;
 
-            // Créer le payload pour l'API
-            const payload = {
-                inventaire: inventaireGlobal, // L'inventaire existant
-                db_id: db_id
-            };
-
-            // L'API nous retourne l'inventaire complet mis à jour
+            const payload = { inventaire: inventaireGlobal, db_id: db_id };
             const nouvelInventaire = await apiPost('/api/v1/taches/terminer', payload);
 
             if (nouvelInventaire) {
@@ -413,7 +325,125 @@
         }
 
         // ---------------------------------------------------------------------
-        // 4. FONCTION DE TÉLÉCHARGEMENT (Sauvegarde Manuelle / Cloud)
+        // LOGIQUE MÉTIER (CALENDRIER) - MIS À JOUR
+        // ---------------------------------------------------------------------
+        
+        function changeMonth(delta) {
+            dateActuelle.setMonth(dateActuelle.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const calendarDisplay = document.getElementById('calendar-display');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normaliser aujourd'hui
+            calendarDisplay.innerHTML = ''; 
+            
+            const monthYear = dateActuelle.toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
+            calendarDisplay.innerHTML += `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <button class="btn" style="width: 40px; padding: 5px; font-size: 1.2em;" onclick="changeMonth(-1)">&#9664;</button>
+                    <h3 style="margin: 0;">${monthYear.charAt(0).toUpperCase() + monthYear.slice(1)}</h3>
+                    <button class="btn" style="width: 40px; padding: 5px; font-size: 1.2em;" onclick="changeMonth(1)">&#9654;</button>
+                </div>
+            `;
+
+            let gridHTML = '<div id="calendar-grid">';
+            JOURS.forEach(day => gridHTML += `<div class="day-header">${day}</div>`);
+
+            const annee = dateActuelle.getFullYear();
+            const mois = dateActuelle.getMonth();
+            const premierJour = new Date(annee, mois, 1);
+            const dernierJour = new Date(annee, mois + 1, 0);
+            
+            let decalage = (premierJour.getDay() === 0) ? 6 : premierJour.getDay() - 1; 
+
+            for (let i = 0; i < decalage; i++) {
+                gridHTML += '<div class="day-cell" style="background: none; cursor: default;"></div>';
+            }
+
+            for (let jour = 1; jour <= dernierJour.getDate(); jour++) {
+                const dateCellule = new Date(annee, mois, jour);
+                const estAujourdhui = dateCellule.getTime() === today.getTime();
+                
+                let classes = 'day-cell';
+                if (estAujourdhui) classes += ' current-day';
+                
+                // --- NOUVELLE LOGIQUE D'INDICATEUR ---
+                // Vérifie si un événement (RDV) est actif ce jour-là
+                const evenementsDuJour = inventaireGlobal.filter(e => {
+                    if (e.type_event !== 'RendezVous' || !e.date_debut || e.est_complete) return false;
+                    
+                    const dateDebut = new Date(e.date_debut);
+                    const dateFin = e.date_fin ? new Date(e.date_fin) : dateDebut;
+                    
+                    // Normaliser les dates pour comparer les jours (ignorer l'heure)
+                    dateDebut.setHours(0, 0, 0, 0);
+                    dateFin.setHours(23, 59, 59, 999); // Fin de journée
+                    
+                    return dateCellule >= dateDebut && dateCellule <= dateFin;
+                });
+
+                const indicateurEvent = evenementsDuJour.length > 0 ? '<span class="event-indicator"></span>' : '';
+                
+                gridHTML += `<div class="${classes}" 
+                                 onclick="showDayDetails(${jour}, ${mois}, ${annee})">
+                                 ${jour}
+                                 ${indicateurEvent}
+                             </div>`;
+            }
+
+            gridHTML += '</div>';
+            calendarDisplay.innerHTML += gridHTML;
+            
+            // Préparer la div des détails (mais la cacher)
+            const detailsDiv = document.getElementById('day-details');
+            if (detailsDiv) {
+                detailsDiv.style.display = 'none';
+                detailsDiv.innerHTML = '';
+            } else {
+                 calendarDisplay.innerHTML += '<div id="day-details" class="event-details" style="display: none;"></div>';
+            }
+        }
+
+        function showDayDetails(jour, mois, annee) {
+            const detailsDiv = document.getElementById('day-details');
+            detailsDiv.style.display = 'block';
+            
+            const dateSelectionnee = new Date(annee, mois, jour);
+            
+            // --- LOGIQUE MISE À JOUR ---
+            const evenementsDuJour = inventaireGlobal.filter(e => {
+                if (e.est_complete || !e.date_debut) return false;
+                
+                const dateDebut = new Date(e.date_debut);
+                const dateFin = e.date_fin ? new Date(e.date_fin) : dateDebut;
+                
+                dateDebut.setHours(0, 0, 0, 0);
+                dateFin.setHours(23, 59, 59, 999);
+                
+                return dateSelectionnee >= dateDebut && dateSelectionnee <= dateFin;
+            });
+
+            let htmlDetails = `<h4>Détails du ${jour}/${mois + 1}/${annee} :</h4>`;
+
+            if (evenementsDuJour.length > 0) {
+                evenementsDuJour.forEach(e => {
+                    const couleur = e.type_event === 'RendezVous' ? '#3498db' : '#f39c12';
+                    htmlDetails += `
+                        <p style="margin: 5px 0; padding-left: 10px; border-left: 3px solid ${couleur};">
+                            <strong>${e.type_event}</strong> : ${e.nom}
+                        </p>
+                    `;
+                });
+            } else {
+                htmlDetails += '<p>Aucun événement ou tâche planifiée pour ce jour.</p>';
+            }
+            detailsDiv.innerHTML = htmlDetails;
+        }
+
+        // ---------------------------------------------------------------------
+        // FONCTIONS DE SAUVEGARDE (Inchangées)
         // ---------------------------------------------------------------------
         
         function telechargerInventaire() {
@@ -424,40 +454,27 @@
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
-            alert("Inventaire JSON téléchargé ! Conservez ce fichier pour la synchronisation.");
+            alert("Inventaire JSON téléchargé !");
         }
-
-        // ---------------------------------------------------------------------
-        // 5. FONCTION DE CHARGEMENT DE FICHIER (Restauration Manuelle / Cloud)
-        // ---------------------------------------------------------------------
 
         function chargerFichierInventaire(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             if (file.type !== "application/json") {
                 alert("Veuillez sélectionner un fichier JSON valide.");
                 return;
             }
-
             const reader = new FileReader();
-            
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (!Array.isArray(data)) {
-                         throw new Error("Le fichier JSON n'est pas une liste valide.");
-                    }
-                    
+                    if (!Array.isArray(data)) throw new Error("Format JSON non valide.");
                     sauvegarderInventaireLocal(data);
-                    alert("Inventaire chargé avec succès ! L'application est mise à jour.");
-                    
+                    alert("Inventaire chargé avec succès !");
                 } catch (error) {
-                    console.error("Erreur de lecture ou de format JSON:", error);
-                    alert(`Erreur: Impossible de lire le fichier. Le format est-il correct ? (${error.message})`);
+                    alert(`Erreur: Impossible de lire le fichier. (${error.message})`);
                 }
             };
-
             reader.readAsText(file);
             document.getElementById('uploadFile').value = ''; 
         }
@@ -468,10 +485,13 @@
 
         window.onload = () => {
             chargerInventaireLocal();
-            fetchPriorites();
-            // Assurez-vous que l'onglet 'Tâches' est actif au chargement
+            // Initialiser l'état des champs de date
+            toggleDateFields(); 
+            // Démarrer sur l'onglet 'Tâches'
             const tasksNav = document.querySelector('.nav-item[data-view="tasks-view"]');
             changeView('tasks-view', tasksNav);
+            // Charger les priorités initiales
+            fetchPriorites();
         };
 
     </script>
